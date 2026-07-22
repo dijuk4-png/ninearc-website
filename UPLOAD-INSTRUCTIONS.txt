@@ -1,0 +1,2 @@
+Upload all contents of this folder to the root of the GitHub repository.
+Keep the existing favicon.png in the repository root.
