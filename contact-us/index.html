@@ -647,43 +647,23 @@ select{cursor:pointer;}
 </div>
 <div class="contact-form-box rvr">
 <div class="eyebrow">Send us a message</div>
-<form id="contact-form" onsubmit="event.preventDefault();
-const f=this;
-const val=(sels)=&gt;{for(const s of sels){const e=f.querySelector(s);if(e&amp;&amp;e.value)return e.value.trim();}return '';};
-const name=val(['[name=&quot;name&quot;]','[name=&quot;fullName&quot;]','input[type=&quot;text&quot;]']);
-const email=val(['[name=&quot;email&quot;]','input[type=&quot;email&quot;]']);
-const company=val(['[name=&quot;company&quot;]','[name=&quot;business&quot;]']);
-const service=val(['[name=&quot;service&quot;]','select']);
-const message=val(['[name=&quot;message&quot;]','[name=&quot;project&quot;]','textarea']);
-const subject='New Website Inquiry – Ninearc Agency';
-const body=`Hi Ninearc Team,
-
-I would like to discuss a potential project.
-
-Name: ${name}
-Email: ${email}
-Company / Business: ${company}
-Service Interested In: ${service}
-
-Project Details:
-${message}
-
-Please get in touch with me to discuss the next steps.
-
-Thank you.`;
-window.location.href='mailto:admin@ninearc.ca?subject='+encodeURIComponent(subject)+'&amp;body='+encodeURIComponent(body);
-return false;">
+<form id="contact-form" action="https://api.web3forms.com/submit" method="POST">
+<input type="hidden" name="access_key" value="7c77be09-be66-47a8-bb78-c239e731601d"/>
+<input type="hidden" name="subject" value="New Website Inquiry – Ninearc Agency"/>
+<input type="hidden" name="from_name" value="Ninearc Website"/>
+<input type="checkbox" name="botcheck" class="hidden" style="display:none;" tabindex="-1" autocomplete="off"/>
 <div class="form-row">
-<div class="fg"><label>First Name</label><input placeholder="Jane" required="" type="text"/></div>
-<div class="fg"><label>Last Name</label><input placeholder="Smith" required="" type="text"/></div>
+<div class="fg"><label for="first-name">First Name</label><input id="first-name" name="first_name" placeholder="Jane" required="" type="text" autocomplete="given-name"/></div>
+<div class="fg"><label for="last-name">Last Name</label><input id="last-name" name="last_name" placeholder="Smith" required="" type="text" autocomplete="family-name"/></div>
 </div>
-<div class="fg"><label>Email Address</label><input placeholder="jane@company.com" required="" type="email"/></div>
-<div class="fg"><label>Company / Business</label><input placeholder="Your company name" type="text"/></div>
-<div class="fg"><label>Service Interested In</label>
-<select><option value="">Select a service...</option><option>Social Media Marketing</option><option>Digital Marketing</option><option>Content Creation</option><option>Graphic Designing</option><option>Email Marketing</option><option>Search Engine Optimization</option><option>Event Marketing</option><option>Web &amp; App Development</option><option>Experiential Marketing</option><option>Multiple Services</option><option>Not sure yet</option></select>
+<div class="fg"><label for="email">Email Address</label><input id="email" name="email" placeholder="jane@company.com" required="" type="email" autocomplete="email"/></div>
+<div class="fg"><label for="company">Company / Business</label><input id="company" name="company" placeholder="Your company name" type="text" autocomplete="organization"/></div>
+<div class="fg"><label for="service">Service Interested In</label>
+<select id="service" name="service"><option value="">Select a service...</option><option>Social Media Marketing</option><option>Digital Marketing</option><option>Content Creation</option><option>Graphic Designing</option><option>Email Marketing</option><option>Search Engine Optimization</option><option>Event Marketing</option><option>Web &amp; App Development</option><option>Experiential Marketing</option><option>Multiple Services</option><option>Not sure yet</option></select>
 </div>
-<div class="fg"><label>Tell us about your project</label><textarea placeholder="Describe your goals, timeline, and any other relevant details..."></textarea></div>
-<button class="form-submit" type="submit">Send Message →</button>
+<div class="fg"><label for="message">Tell us about your project</label><textarea id="message" name="message" placeholder="Describe your goals, timeline, and any other relevant details..." required=""></textarea></div>
+<button class="form-submit" id="form-submit" type="submit">Send Message →</button>
+<p id="form-error" role="alert" style="display:none;color:#d66;font-size:14px;margin-top:14px;text-align:center;">Something went wrong. Please try again or email admin@ninearc.ca directly.</p>
 </form>
 <div id="form-success" style="display:none;text-align:center;padding:40px 0;">
 <div style="font-size:44px;margin-bottom:14px;">✓</div>
@@ -886,24 +866,43 @@ function toggleTheme() {
   }
 })();
 
-function sendEmail(e){
-  e.preventDefault();
-  var fname = document.querySelector('#contact-form input[placeholder="Jane"]');
-  var lname = document.querySelector('#contact-form input[placeholder="Smith"]');
-  var email = document.querySelector('#contact-form input[type="email"]');
-  var company = document.querySelector('#contact-form input[placeholder="Your company name"]');
-  var service = document.querySelector('#contact-form select');
-  var message = document.querySelector('#contact-form textarea');
-  var fullName = ((fname ? fname.value : '') + ' ' + (lname ? lname.value : '')).trim();
-  var body = 'Name: ' + fullName + '\n' +
-             'Email: ' + (email ? email.value : '') + '\n' +
-             'Company: ' + (company ? company.value : '') + '\n' +
-             'Service Interested In: ' + (service ? service.value : '') + '\n\n' +
-             'Message:\n' + (message ? message.value : '');
-  var subject = 'New Inquiry from ' + (fullName || 'Website Visitor') + ' \u2013 Ninearc Agency';
-  window.location.href = 'mailto:admin@ninearc.ca?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-  document.getElementById('contact-form').style.display = 'none';
-  document.getElementById('form-success').style.display = 'block';
+const contactForm = document.getElementById('contact-form');
+if (contactForm) {
+  contactForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const submitButton = document.getElementById('form-submit');
+    const errorMessage = document.getElementById('form-error');
+    const successMessage = document.getElementById('form-success');
+    const originalButtonText = submitButton.textContent;
+
+    submitButton.disabled = true;
+    submitButton.textContent = 'Sending…';
+    errorMessage.style.display = 'none';
+
+    try {
+      const response = await fetch(contactForm.action, {
+        method: 'POST',
+        body: new FormData(contactForm),
+        headers: { 'Accept': 'application/json' }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.success === false) {
+        throw new Error(result.message || 'Form submission failed');
+      }
+
+      contactForm.reset();
+      contactForm.style.display = 'none';
+      successMessage.style.display = 'block';
+    } catch (error) {
+      console.error('Web3Forms submission error:', error);
+      errorMessage.style.display = 'block';
+      submitButton.disabled = false;
+      submitButton.textContent = originalButtonText;
+    }
+  });
 }
 </script>
 </body>
